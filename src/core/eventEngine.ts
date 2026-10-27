@@ -135,6 +135,8 @@ function foldSession(stone?: GNum, exp?: GNum, items = 0): void {
 }
 
 export interface EventApplyOpts {
+  /** 自动结算不逐件弹掉落提示。 */
+  quiet?: boolean
   /** 空祭炼位时自动祭上法宝;默认 true,玩家不在场的自动结算(离线 / 遇事勿扰 / 超时)传 false,同 offline.ts 的 autoEquip=false */
   autoEquipArtifact?: boolean
 }
@@ -176,7 +178,7 @@ function applyEffect(effect: EventEffect, tier: number, opts: EventApplyOpts = {
         luck: modOf(player.finalStats.mods, 'luck') + personalityEffects(player.petId).dropLuck,
         minQualityRank: effect.minQualityRank
       })
-      const line = `获得 ${acquireEquipment(inst).line}`
+      const line = `获得 ${acquireEquipment(inst, { quiet: opts.quiet }).line}`
       foldSession(undefined, undefined, 1)
       return line
     }
@@ -199,7 +201,7 @@ function applyEffect(effect: EventEffect, tier: number, opts: EventApplyOpts = {
     case 'artifact': {
       const id = effect.id ?? randomDropArtifact(tier)
       if (!id) return null
-      const line = `获得 ${acquireArtifact(id, false, opts.autoEquipArtifact ?? true)}`
+      const line = `获得 ${acquireArtifact(id, opts.quiet, opts.autoEquipArtifact ?? true)}`
       foldSession(undefined, undefined, 1)
       return line
     }
@@ -282,5 +284,5 @@ export function autoResolveEvent(eventId: string, tier: number): EventResolution
   let idx = def.choices.findIndex(c => c.isDefault && choiceAvailable(c, tier))
   if (idx < 0) idx = def.choices.findIndex(c => choiceAvailable(c, tier))
   if (idx < 0) idx = 0
-  return resolveEventChoice(def, idx, tier, { autoEquipArtifact: false })
+  return resolveEventChoice(def, idx, tier, { autoEquipArtifact: false, quiet: true })
 }

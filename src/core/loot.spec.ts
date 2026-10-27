@@ -30,6 +30,76 @@ import { gn, toNum } from '@/utils/gnum'
 import { stoneByTier } from './formulas'
 import { modOf, capChance } from './statsCalc'
 import type { EquipmentInstance, QualityId } from '@/types'
+import { useUiStore } from '@/stores/ui'
+import * as equipGen from './equipGen'
+
+describe('稀有装备 · 实际入囊才展示', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  function item(uid: string, quality: QualityId = 'spirit'): EquipmentInstance {
+    return { uid, templateId: 'b_qingyun', quality, tier: 3, level: 0, affixes: [{ id: 'atk1', roll: 0.75 }] }
+  }
+
+  it('灵品入囊显示真实实例与首次收录，同模板再得不重复标首次', () => {
+    const ui = useUiStore()
+    const first = item('first')
+    expect(acquireEquipment(first).bagged).toBe(true)
+    expect(ui.rareLoot[0]).toMatchObject({ item: first, firstDiscovery: true })
+    acquireEquipment(item('second', 'divine'))
+    expect(ui.rareLoot[1]!.firstDiscovery).toBe(false)
+    expect(ui.toasts.some(toast => toast.text.startsWith('拾得'))).toBe(false)
+  })
+
+  it('普通装备不弹卡；静默获得仍记见闻，之后不冒充首次', () => {
+    const ui = useUiStore()
+    acquireEquipment(item('normal', 'excellent'))
+    expect(ui.rareLoot).toHaveLength(0)
+    acquireEquipment(item('offline'), { quiet: true })
+    expect(ui.rareLoot).toHaveLength(0)
+    acquireEquipment(item('online'))
+    expect(ui.rareLoot).toHaveLength(1)
+    expect(ui.rareLoot[0]!.firstDiscovery).toBe(false)
+  })
+
+  it('满包化尘不显示入囊卡；智能腾位成功则显示新件', () => {
+    const inventory = useInventoryStore()
+    for (let i = 0; i < 120; i += 1) inventory.addEquipment(item(`old-${i}`, 'mortal'))
+    const rejected = acquireEquipment(item('rejected'))
+    expect(rejected.bagged).toBe(false)
+    expect(useUiStore().rareLoot).toHaveLength(0)
+    useSettingsStore().smartKeep.enabled = true
+    const kept = item('kept')
+    expect(acquireEquipment(kept)).toMatchObject({ bagged: true, evicted: true })
+    expect(useUiStore().rareLoot[0]!.item.uid).toBe('kept')
+    expect(useUiStore().rareLoot[0]!.firstDiscovery).toBe(false)
+  })
+
+  it('自动回收稀有装备不弹卡，器灵尘照常入账', () => {
+    const settings = useSettingsStore()
+    settings.smartKeep.enabled = true
+    settings.smartKeep.minQuality = 8
+    const gain = acquireEquipment(item('recycled'))
+    expect(gain.bagged).toBe(false)
+    expect(gain.dust).toBeGreaterThan(0)
+    expect(useUiStore().rareLoot).toHaveLength(0)
+  })
+
+  it('离线首领静默结算仍发装备，在线同件照常展示', () => {
+    const generated = vi.spyOn(equipGen, 'generateEquipment').mockReturnValue(item('boss-drop'))
+    const chance = vi.spyOn(rng, 'chance').mockReturnValue(false)
+    try {
+      afterWin(regionDef('qingyun')!, 1, true, false, true)
+      expect(useInventoryStore().findItem('boss-drop')).toBeDefined()
+      expect(useUiStore().rareLoot).toHaveLength(0)
+      generated.mockReturnValue(item('online-boss'))
+      afterWin(regionDef('qingyun')!, 1, true)
+      expect(useUiStore().rareLoot[0]!.item.uid).toBe('online-boss')
+    } finally {
+      generated.mockRestore()
+      chance.mockRestore()
+    }
+  })
+})
 
 describe('自动回收 · 装备入包前的第一道闸', () => {
   beforeEach(() => {

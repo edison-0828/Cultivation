@@ -78,16 +78,19 @@ export function onAcquire(listener: AcquireListener): () => void {
  * forceKeep(新手馈赠)不受此闸约束。
  */
 export function acquireEquipment(inst: EquipmentInstance, opts: { quiet?: boolean; forceKeep?: boolean } = {}): AcquireResult {
+  const firstDiscovery = useLoreStore().equipSeen(inst.templateId) === undefined
   const res = acquireInto(inst, opts)
+  if (res.bagged && !opts.quiet && isRareQuality(qualityDef(inst.quality))) {
+    useUiStore().showRareLoot(inst, firstDiscovery)
+  }
   for (const listener of acquireListeners) listener(inst, res)
   return res
 }
 
 function acquireInto(inst: EquipmentInstance, opts: { quiet?: boolean; forceKeep?: boolean }): AcquireResult {
-  const { quiet = false, forceKeep = false } = opts
+  const { forceKeep = false } = opts
   const inventory = useInventoryStore()
   const resources = useResourcesStore()
-  const ui = useUiStore()
   const q = qualityDef(inst.quality)
   const t = equipmentTemplate(inst.templateId)
   const label = `${q.name}·${t?.name ?? '不明之物'}`
@@ -132,9 +135,6 @@ function acquireInto(inst: EquipmentInstance, opts: { quiet?: boolean; forceKeep
     }
     const res = toDust(inst)
     return { ...res, line: `${label}(行囊已满,${res.line})` }
-  }
-  if (!quiet && isRareQuality(q)) {
-    ui.toast(`拾得「${label}」`, 'rare')
   }
   return { line: label, bagged: true, evicted: false, dust: 0, stone: gnZero() }
 }
@@ -229,8 +229,9 @@ export function randomDropArtifact(tier: number): string | null {
  * 概率进 rng.chance 前先归一到 [0,1](rng.chance 不钳制,>1 必然掉落、<0 永不掉落;ISS-030);
  * capChance 取 statsCalc 唯一一份,与 combat 共用。
  * @param autoEquipArtifact 空祭炼位时自动祭上法宝;离线整段结算传 false(玩家不在场,同 autoResolveEvent)
+ * @param quiet 离线首领结算只入账，不逐件展示掉落。
  */
-export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean, autoEquipArtifact = true): DropSummary {
+export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean, autoEquipArtifact = true, quiet = false): DropSummary {
   const player = usePlayerStore()
   const resources = useResourcesStore()
   const inventory = useInventoryStore()
@@ -279,7 +280,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean,
     if (rng.chance(Math.min(EQUIP_DROP_CHANCE_CAP, equipChance)) || (isBoss && i === 0)) {
       // 普通战不传品质下限:传了(哪怕是 0)即「显式下限」,品质窗口失效,在线会比离线/审计多掉低阶高品。首领例外
       const inst = generateEquipment(tier, rng, isBoss ? { luck, minQualityRank: 1 } : { luck })
-      lines.push(acquireEquipment(inst).line)
+      lines.push(acquireEquipment(inst, { quiet }).line)
       items += 1
     }
   }
@@ -298,7 +299,7 @@ export function afterWin(region: RegionDef, rewardMult: number, isBoss: boolean,
   if (rng.chance(capChance(ARTIFACT_DROP_CHANCE * (isBoss ? 6 : 1) * (1 + luck)))) {
     const artId = randomDropArtifact(tier)
     if (artId) {
-      lines.push(acquireArtifact(artId, false, autoEquipArtifact))
+      lines.push(acquireArtifact(artId, quiet, autoEquipArtifact))
       items += 1
     }
   }

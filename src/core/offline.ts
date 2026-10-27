@@ -410,7 +410,7 @@ export function settleOffline(nowMs: number): OfflineSummary | null {
           if (bossResult.win) {
             // 与在线首领同乘 mode×regReward,另叠收益折损
             // 第四参 false:玩家不在场,不自动祭上掉落的法宝(同 autoResolveEvent)
-            const drops = afterWin(region, modeDef.rewardMult * OFFLINE_BOSS_REWARD_MULT * regionEventReward, true, false)
+            const drops = afterWin(region, modeDef.rewardMult * OFFLINE_BOSS_REWARD_MULT * regionEventReward, true, false, true)
             trip.stone = add(trip.stone, drops.stone)
             trip.exp = add(trip.exp, drops.exp)
             trip.items += drops.items

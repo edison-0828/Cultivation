@@ -1,6 +1,47 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useUiStore } from './ui'
+import type { EquipmentInstance } from '@/types'
+
+describe('ui store · 稀有掉落', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  function item(uid: string): EquipmentInstance {
+    return { uid, templateId: 'b_qingyun', quality: 'spirit', tier: 3, level: 0, affixes: [{ id: 'atk1', roll: 0.5 }] }
+  }
+
+  it('入队后装备强化与词条改写不改掉落快照', () => {
+    const ui = useUiStore()
+    const source = item('snapshot')
+    ui.showRareLoot(source, true)
+    source.level = 8
+    source.affixes[0]!.roll = 1
+    source.affixes.push({ id: 'crit1', roll: 1 })
+    expect(ui.rareLoot[0]!.item.level).toBe(0)
+    expect(ui.rareLoot[0]!.item.affixes).toEqual([{ id: 'atk1', roll: 0.5 }])
+    expect(ui.rareLoot[0]!.firstDiscovery).toBe(true)
+  })
+
+  it('连续掉落保留正在阅读的卡片，待展示只保留最近三件', () => {
+    const ui = useUiStore()
+    for (let i = 0; i < 9; i += 1) ui.showRareLoot(item(String(i)), false)
+    expect(ui.rareLoot.map(drop => drop.item.uid)).toEqual(['0', '6', '7', '8'])
+    ui.dismissRareLoot(ui.rareLoot[0]!.id)
+    expect(ui.rareLoot[0]!.item.uid).toBe('6')
+    const next = ui.rareLoot[0]!.id
+    ui.dismissRareLoot(-1)
+    expect(ui.rareLoot[0]!.id).toBe(next)
+  })
+
+  it('同一件不重复入队，不同实例仍分别展示', () => {
+    const ui = useUiStore()
+    ui.showRareLoot(item('a'), true)
+    ui.showRareLoot(item('a'), false)
+    ui.showRareLoot(item('b'), false)
+    expect(ui.rareLoot.map(drop => drop.item.uid)).toEqual(['a', 'b'])
+    expect(ui.rareLoot[0]!.firstDiscovery).toBe(true)
+  })
+})
 
 describe('ui store · Toast', () => {
   beforeEach(() => {

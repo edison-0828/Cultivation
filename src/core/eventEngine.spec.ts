@@ -8,6 +8,7 @@ import { useInventoryStore } from '@/stores/inventory'
 import { usePlayerStore } from '@/stores/player'
 import { useAdventureStore } from '@/stores/adventure'
 import { useLoreStore } from '@/stores/lore'
+import { useUiStore } from '@/stores/ui'
 import { useQuestsStore } from '@/stores/quests'
 import { MATERIALS, type MaterialBucket, type MaterialDef } from '@/data/materials'
 import { eventDef } from '@/data/events'
@@ -15,6 +16,33 @@ import { rng } from '@/utils/random'
 import { autoResolveEvent, resolveEventChoice } from './eventEngine'
 import { stoneByTier } from './formulas'
 import { rollFieldMaterial } from './loreService'
+import * as equipGen from './equipGen'
+
+describe('事件稀有掉落 · 手动与自动', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('同一际遇的稀有装备，手动领取展示卡片，自动结算只入囊', () => {
+    const def = eventDef('ev_jade_slip')!
+    const outcome = { weight: 1, text: '', effects: [{ type: 'equipment' as const, minQualityRank: 3 }] }
+    const choose = vi.spyOn(rng, 'weighted').mockImplementationOnce(() => outcome)
+    const generate = vi.spyOn(equipGen, 'generateEquipment').mockReturnValue({
+      uid: 'auto-rare', templateId: 'b_qingyun', quality: 'spirit', tier: 3, level: 0, affixes: []
+    })
+    try {
+      autoResolveEvent(def.id, 3)
+      expect(useInventoryStore().findItem('auto-rare')).toBeDefined()
+      expect(useUiStore().rareLoot).toHaveLength(0)
+      choose.mockImplementationOnce(() => outcome)
+      generate.mockReturnValue({ uid: 'manual-rare', templateId: 'b_qingyun', quality: 'spirit', tier: 3, level: 0, affixes: [] })
+      resolveEventChoice(def, 0, 3)
+      expect(useUiStore().rareLoot[0]!.item.uid).toBe('manual-rare')
+      expect(useUiStore().rareLoot[0]!.firstDiscovery).toBe(false)
+    } finally {
+      choose.mockRestore()
+      generate.mockRestore()
+    }
+  })
+})
 
 describe('事件结算 · 灵石代价守恒', () => {
   beforeEach(() => {
