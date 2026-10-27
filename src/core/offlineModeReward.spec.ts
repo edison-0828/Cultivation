@@ -561,8 +561,8 @@ describe('离线首领战不替玩家祭法宝', () => {
   /** 判据落在调用点:行为判据依赖首领恰好掉法宝(1.5%×6 = 9%),多数 run 空转 */
   it('首领战的 afterWin 调用把「不自动祭炼」传到底', () => {
     const offline = readFileSync(new URL('./offline.ts', import.meta.url), 'utf8')
-    expect(offline, '首领战那行必须带第四参 false(玩家不在场)').toMatch(
-      /afterWin\([^)]*OFFLINE_BOSS_REWARD_MULT[^)]*,\s*true,\s*false\)/
+    expect(offline, '首领战必须不自动祭炼并静默展示掉落').toMatch(
+      /afterWin\([^)]*OFFLINE_BOSS_REWARD_MULT[^)]*,\s*true,\s*false,\s*true\)/
     )
   })
 

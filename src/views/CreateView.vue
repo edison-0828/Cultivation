@@ -29,10 +29,16 @@
       </div>
     </div>
 
-    <div class="card-ink mt-4 px-4 py-3">
+    <div
+      class="card-ink mt-4 px-4 py-3"
+      :style="{ borderColor: tint(gradeColor, 0.55), boxShadow: `inset 3px 0 0 ${gradeColor}` }"
+    >
       <div class="flex items-center justify-between">
         <p class="font-kai text-[13px] tracking-[0.3em] text-ink-faint">灵 根</p>
-        <span class="font-kai text-[15px] tracking-widest text-cinnabar">{{ profile.gradeName }}</span>
+        <span
+          class="rounded-md border bg-paper px-2.5 py-1 font-kai text-[15px] tracking-widest"
+          :style="{ color: gradeColor, borderColor: tint(gradeColor, 0.45) }"
+        >{{ profile.gradeName }}</span>
       </div>
       <!-- flex-wrap:五根灵根在 320 宽下并排放不下 -->
       <div :key="rollSeq" class="stagger-in mt-4 flex flex-wrap justify-center gap-3">
@@ -48,7 +54,7 @@
       </div>
       <p class="mt-4 text-center text-[12px] text-ink-faint">
         修行倍率
-        <span :key="rollSeq" class="tabular text-[14px] text-ink animate-ink-pop">×{{ profile.growthMult.toFixed(2) }}</span>
+        <span :key="rollSeq" class="tabular text-[14px] animate-ink-pop" :style="{ color: gradeColor }">×{{ profile.growthMult.toFixed(2) }}</span>
       </p>
       <div v-if="tendencies.length" :key="`tend-${rollSeq}`" class="stagger-in mt-3 space-y-1.5 border-t border-ink/10 pt-3">
         <p v-for="t in tendencies" :key="t.element" class="flex gap-2 text-[11px] leading-relaxed text-ink-soft">
@@ -77,6 +83,8 @@
   import { rootElements, tendencyLines } from '@/core/linggenAffinity'
   import { randomDaoName } from '@/data/names'
   import { ELEMENTS } from '@/data/linggen'
+  import { linggenGradeColor } from '@/ui/linggenGrade'
+  import { tint } from '@/utils/colorToken'
   import { generateEquipment } from '@/core/equipGen'
   import { acquireEquipment } from '@/core/loot'
   import { trackRealm } from '@/core/progress'
@@ -104,6 +112,7 @@
   // 灵根草稿持久化:刷新不白拿一次重掷,也不洗掉已花掉的次数
   if (!game.createProfile) game.setCreateProfile(rollLinggen(rng))
   const profile = computed(() => game.createProfile!)
+  const gradeColor = computed(() => linggenGradeColor(profile.value.gradeName))
   const rerollsLeft = computed(() => game.createRerolls)
   /** 不限次建号:按钮不显示余量 */
   const unlimitedReroll = computed(() => rerollsLeft.value === null)

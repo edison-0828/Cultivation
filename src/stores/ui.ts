@@ -1,7 +1,13 @@
 /** 瞬态 UI 状态(Toast / 各类 Modal),不持久化 */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { LinggenProfile, OfflineSummary } from '@/types'
+import type { EquipmentInstance, LinggenProfile, OfflineSummary } from '@/types'
+
+export interface RareLootNotice {
+  id: number
+  item: EquipmentInstance
+  firstDiscovery: boolean
+}
 
 export interface Toast {
   id: number
@@ -66,6 +72,25 @@ let toastSeq = 1
 
 export const useUiStore = defineStore('ui', () => {
   const toasts = ref<Toast[]>([])
+  const rareLoot = ref<RareLootNotice[]>([])
+  let rareLootSeq = 0
+
+  /** 当前件保留，待展示最多三件；保存掉落瞬间的词条。 */
+  function showRareLoot(item: EquipmentInstance, firstDiscovery: boolean): void {
+    if (rareLoot.value.some(drop => drop.item.uid === item.uid)) return
+    const notice: RareLootNotice = {
+      id: ++rareLootSeq,
+      item: { ...item, affixes: item.affixes.map(affix => ({ ...affix })) },
+      firstDiscovery
+    }
+    rareLoot.value = rareLoot.value.length < 4
+      ? [...rareLoot.value, notice]
+      : [rareLoot.value[0]!, ...rareLoot.value.slice(-2), notice]
+  }
+
+  function dismissRareLoot(id: number): void {
+    rareLoot.value = rareLoot.value.filter(drop => drop.id !== id)
+  }
   const offlineSummary = ref<OfflineSummary | null>(null)
   const breakthrough = ref<BreakthroughView | null>(null)
   const equipDetailUid = ref<string | null>(null)
@@ -145,6 +170,9 @@ export const useUiStore = defineStore('ui', () => {
 
   return {
     toasts,
+    rareLoot,
+    showRareLoot,
+    dismissRareLoot,
     offlineSummary,
     breakthrough,
     equipDetailUid,

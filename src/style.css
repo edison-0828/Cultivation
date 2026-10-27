@@ -416,6 +416,64 @@ html[data-theme='dark'] {
 }
 
 /* ================= 组件层 ================= */
+.rare-loot-host {
+  bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+.rare-loot-card {
+  max-height: min(420px, 65dvh);
+  overflow-y: auto;
+  border-color: var(--loot-line);
+  box-shadow: 0 8px 32px rgb(var(--shadow-ink-rgb) / 0.22), inset 0 3px 0 var(--loot-color);
+}
+.rare-loot-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at top left, var(--loot-glow), transparent 65%);
+}
+.rare-loot-icon {
+  border-color: var(--loot-line);
+  background: var(--color-paper);
+  box-shadow: 0 0 20px var(--loot-glow);
+}
+.rare-loot-sheen {
+  position: absolute;
+  inset: 0;
+  width: 30%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--loot-glow), transparent);
+  animation: shimmer 0.8s ease-out forwards;
+}
+.rare-loot-enter-active,
+.rare-loot-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.rare-loot-enter-from,
+.rare-loot-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rare-loot-sheen {
+    display: none;
+    animation: none !important;
+    animation-delay: 0ms !important;
+  }
+  .rare-loot-enter-active,
+  .rare-loot-leave-active {
+    transition: none !important;
+  }
+}
+.reduce-motion .rare-loot-sheen {
+  display: none;
+  animation: none !important;
+  animation-delay: 0ms !important;
+}
+.reduce-motion .rare-loot-enter-active,
+.reduce-motion .rare-loot-leave-active {
+  transition: none !important;
+}
+
 .card-ink {
   position: relative;
   background: rgb(var(--color-paper-lifted-rgb));

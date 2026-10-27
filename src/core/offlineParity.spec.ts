@@ -83,7 +83,7 @@ describe('离线历练 · 区域事件加丰与加难成对(regReward)', () => {
     // 与 danger 成对:妖潮/古墓/商队加难亦加丰,倍率进石头/修为/掉落数
     expect(offline).toContain('regionEventReward')
     expect(offline).toMatch(
-      /afterWin\(region, modeDef\.rewardMult \* OFFLINE_BOSS_REWARD_MULT \* regionEventReward, true, false\)/
+      /afterWin\(region, modeDef\.rewardMult \* OFFLINE_BOSS_REWARD_MULT \* regionEventReward, true, false, true\)/
     )
     expect(offline).toContain('modeDef.rewardMult * regionEventReward')
     // 在线 afterWin 把 mode×regReward 全折进 rewardMult,离线装备掉落须同乘模式倍率

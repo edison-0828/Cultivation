@@ -17,6 +17,7 @@
 
     <!-- 全局浮层 -->
     <ToastHost />
+    <RareLootHost />
     <UpdatePrompt />
     <OfflineRewardDialog />
     <BreakthroughResultDialog />
@@ -44,6 +45,7 @@
   import TopStatusBar from '@/components/common/TopStatusBar.vue'
   import BottomNavigation from '@/components/common/BottomNavigation.vue'
   import ToastHost from '@/components/common/ToastHost.vue'
+  import RareLootHost from '@/components/equipment/RareLootHost.vue'
   import UpdatePrompt from '@/components/common/UpdatePrompt.vue'
   import OfflineRewardDialog from '@/components/offline/OfflineRewardDialog.vue'
   import BreakthroughResultDialog from '@/components/cultivation/BreakthroughResultDialog.vue'
